@@ -63,7 +63,9 @@
   .clock .tz { display: block; font-size: 13px; font-weight: 600; letter-spacing: .4px; color: var(--muted); margin: 8px 0 0; }
 
   .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--blue-soft); border-radius: 999px; padding: 4px; flex: none; margin-top: 22px; }
-  .tab { background: transparent; color: var(--muted); font-weight: 700; font-size: 15px; height: 40px; border-radius: 999px; transition: background .15s, color .15s; }
+  .tab { background: transparent; color: var(--muted); font-weight: 700; font-size: 13px; height: 66px; border-radius: 999px; transition: background .15s, color .15s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; }
+  .tab .ic { width: 30px; height: 30px; opacity: .5; filter: saturate(.55); transition: opacity .15s, filter .15s, transform .15s; }
+  .tab.active .ic { opacity: 1; filter: none; transform: scale(1.06); }
   .tab.active { background: #fff; color: var(--blue-dark); box-shadow: 0 1px 5px rgba(60,90,150,.16); }
 
   .stamp {
@@ -95,6 +97,7 @@
   .delwrap { position: relative; height: 26px; }
   .del { position: absolute; right: 0; top: 50%; transform: translateY(-50%); min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; background: none; color: #c3cee0; font-size: 18px; font-weight: 600; line-height: 1; z-index: 1; white-space: nowrap; }
   .del.armed { background: #e5707a; color: #fff; font-size: 11px; font-weight: 700; padding: 0 10px; }
+  .empty .eic { display: block; width: 64px; height: 64px; margin: 0 auto 12px; }
   .empty { text-align: center; color: var(--muted); font-weight: 600; padding: 34px 10px; font-size: 14px; line-height: 1.6; }
 
   .decor { flex: none; height: 44px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 8px 14px; position: relative; z-index: 1; }
@@ -117,7 +120,7 @@
 
   @media (max-height: 660px) {
     .clock { font-size: 44px; margin-top: 12px; }
-    .tabs { margin-top: 14px; } .stamp { height: 54px; }
+    .tabs { margin-top: 14px; } .tab { height: 54px; } .tab .ic { width: 24px; height: 24px; } .stamp { height: 54px; }
   }
 </style>
 </head>
@@ -125,6 +128,29 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
+
+    <symbol id="icFeed" viewBox="0 0 48 48">
+      <path d="M21 12V9c0-4 6-4 6 0v3z" fill="#ecc562"/>
+      <rect x="16.5" y="11.5" width="15" height="6" rx="3" fill="#8aa9dc"/>
+      <rect x="14" y="17" width="20" height="26" rx="7" fill="#eef5fd" stroke="#8aa9dc" stroke-width="2.5"/>
+      <path d="M15.3 29h17.4v8.5a5.800 5.800 0 0 1-5.800 5.800h-5.800a5.800 5.800 0 0 1-5.800-5.800z" fill="#d6e5f7"/>
+      <path d="M29.500 22h3M29.500 26h2" stroke="#8aa9dc" stroke-width="1.500" stroke-linecap="round"/>
+      <circle cx="20.5" cy="33" r="1.8" fill="#3a4a6a"/><circle cx="27.5" cy="33" r="1.8" fill="#3a4a6a"/><path d="M23.0 37q2.5 2.8 5 0" stroke="#3a4a6a" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="18.0" cy="36.5" r="2.2" fill="#f0a6a0" opacity=".75"/><circle cx="30.0" cy="36.5" r="2.2" fill="#f0a6a0" opacity=".75"/>
+    </symbol>
+    <symbol id="icPee" viewBox="0 0 48 48">
+      <path d="M24 4C24 4 10.500 19.500 10.500 29.500a13.500 13.500 0 0 0 27 0C37.500 19.500 24 4 24 4z" fill="#8bb0de" stroke="#6f9bd3" stroke-width="2.500" stroke-linejoin="round"/>
+      <path d="M16.500 29q0-5.500 4-10" stroke="#fff" stroke-width="2.800" fill="none" stroke-linecap="round" opacity=".65"/>
+      <circle cx="20" cy="32" r="1.8" fill="#3a4a6a"/><circle cx="28" cy="32" r="1.8" fill="#3a4a6a"/><path d="M22.5 36q2.5 2.8 5 0" stroke="#3a4a6a" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="17.5" cy="35.5" r="2.2" fill="#f0a6a0" opacity=".75"/><circle cx="30.5" cy="35.5" r="2.2" fill="#f0a6a0" opacity=".75"/>
+    </symbol>
+    <symbol id="icPoop" viewBox="0 0 48 48">
+      <g fill="#d6ab7d" stroke="#b5845a" stroke-width="2.500" stroke-linejoin="round">
+        <ellipse cx="24" cy="37" rx="17" ry="7.500"/>
+        <ellipse cx="24" cy="26.500" rx="12.500" ry="6.500"/>
+        <path d="M24 6c5 2.500 5.500 6 3.500 8.500C32 15.500 33 19 31.500 21c-4.500 2.500-10.500 2.500-15 0-1.500-2 -.5-5.500 4-6.500C18.500 12 19 8.500 24 6z"/>
+      </g>
+      <path d="M20 17.500q3-1.800 6-.2" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5"/>
+      <circle cx="19.5" cy="36" r="1.8" fill="#3a4a6a"/><circle cx="28.5" cy="36" r="1.8" fill="#3a4a6a"/><path d="M22.0 39.5q2.5 2.8 5 0" stroke="#3a4a6a" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="17.0" cy="39.5" r="2.2" fill="#f0a6a0" opacity=".75"/><circle cx="31.0" cy="39.5" r="2.2" fill="#f0a6a0" opacity=".75"/>
+    </symbol>
     <symbol id="flB" viewBox="0 0 24 24">
       <g fill="#8aa9dc"><circle cx="12" cy="6" r="5"/><circle cx="18" cy="11" r="5"/><circle cx="16" cy="18" r="5"/><circle cx="8" cy="18" r="5"/><circle cx="6" cy="11" r="5"/></g>
       <circle cx="12" cy="13" r="3.2" fill="#ecc562"/>
@@ -179,9 +205,9 @@
     <div class="clock" id="clock">--:--<small id="ampm"></small><span class="tz" id="tz">EASTERN</span></div>
 
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" data-tab="feed">Feed</button>
-      <button class="tab" role="tab" data-tab="pee">Pee</button>
-      <button class="tab" role="tab" data-tab="poop">Poop</button>
+      <button class="tab" role="tab" data-tab="feed"><svg class="ic" aria-hidden="true"><use href="#icFeed"/></svg><span>Feed</span></button>
+      <button class="tab" role="tab" data-tab="pee"><svg class="ic" aria-hidden="true"><use href="#icPee"/></svg><span>Pee</span></button>
+      <button class="tab" role="tab" data-tab="poop"><svg class="ic" aria-hidden="true"><use href="#icPoop"/></svg><span>Poop</span></button>
     </div>
 
     <button class="stamp" id="stamp">Stamp</button>
@@ -221,6 +247,7 @@
 (function () {
   const TZ = 'America/New_York';
   const TABS = ['feed', 'pee', 'poop'];
+  const ICON = { feed: 'icFeed', pee: 'icPee', poop: 'icPoop' };
   const EMPTY = {
     feed: 'No feedings yet.<br>Tap Stamp when baby eats.',
     pee: 'No pees yet.<br>Tap Stamp to record one.',
@@ -315,7 +342,7 @@
   function render(popId) {
     const items = data[tab];
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    if (!items.length) { listEl.innerHTML = `<div class="empty">${EMPTY[tab]}</div>`; return; }
+    if (!items.length) { listEl.innerHTML = `<div class="empty"><svg class="eic" aria-hidden="true"><use href="#${ICON[tab]}"/></svg>${EMPTY[tab]}</div>`; return; }
     listEl.innerHTML = '';
     items.forEach((rec, i) => {
       const row = document.createElement('div');
