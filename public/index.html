@@ -86,6 +86,7 @@
   .head.feed, .row.feed { grid-template-columns: 66px 1fr 1fr 34px 44px; }
   .head { position: sticky; top: 0; z-index: 3; background: #fff; padding: 2px 0 6px; font-size: 10px; font-weight: 700; color: #a9b7cf; letter-spacing: .4px; text-transform: uppercase; }
   .head .r { justify-self: end; width: max-content; white-space: nowrap; }
+  .hint { text-align: center; font-size: 11px; font-weight: 600; color: #b3c0d6; padding: 0 0 8px; }
   .day { padding: 16px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: .8px; color: #9fb0cb; font-variant-numeric: tabular-nums; }
   .row { padding: 11px 0; border-bottom: 1px solid var(--line); position: relative; font-size: var(--fs); cursor: pointer; }
   .day + .row { border-top: 1px solid var(--line); }
@@ -428,9 +429,9 @@
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     if (!items.length) { listEl.innerHTML = `<div class="empty"><svg class="eic" aria-hidden="true"><use href="#${ICON[tab]}"/></svg>${EMPTY[tab]}</div>`; return; }
     const feed = tab === 'feed';
-    listEl.innerHTML = feed
+    listEl.innerHTML = '<div class="hint">Tap a record to delete it</div>' + (feed
       ? '<div class="head feed"><span></span><span>Start</span><span>End</span><span>ML</span><span class="r">Since last</span></div>'
-      : '<div class="head"><span></span><span>Time</span><span class="r">Since last</span></div>';
+      : '<div class="head"><span></span><span>Time</span><span class="r">Since last</span></div>');
     let lastDay = '';
     items.forEach((rec, i) => {
       const day = dayLabel(rec.ts);
