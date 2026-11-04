@@ -39,6 +39,8 @@ async function migrate() {
       ts BIGINT NOT NULL
     );
     ALTER TABLE records ADD COLUMN IF NOT EXISTS end_ts BIGINT;
+    ALTER TABLE records ADD COLUMN IF NOT EXISTS type TEXT;
+    ALTER TABLE records ADD COLUMN IF NOT EXISTS ml INTEGER;
     CREATE INDEX IF NOT EXISTS records_user_idx ON records(user_id, tab, ts DESC);
   `);
 }
@@ -151,9 +153,9 @@ async function api(req, res, pathname) {
   if (pathname === '/api/me' && method === 'GET') return send(res, 200, { child: user.child_name, email: user.email });
 
   if (pathname === '/api/records' && method === 'GET') {
-    const r = await pool.query('SELECT id, tab, ts, end_ts FROM records WHERE user_id = $1 ORDER BY ts DESC LIMIT 5000', [user.id]);
+    const r = await pool.query('SELECT id, tab, ts, end_ts, type, ml FROM records WHERE user_id = $1 ORDER BY ts DESC LIMIT 5000', [user.id]);
     const out = { feed: [], pee: [], poop: [] };
-    r.rows.forEach(x => out[x.tab] && out[x.tab].push({ id: x.id, ts: Number(x.ts), end: x.end_ts == null ? null : Number(x.end_ts) }));
+    r.rows.forEach(x => out[x.tab] && out[x.tab].push({ id: x.id, ts: Number(x.ts), end: x.end_ts == null ? null : Number(x.end_ts), type: x.type || null, ml: x.ml == null ? null : x.ml }));
     return send(res, 200, out);
   }
 
@@ -178,6 +180,14 @@ async function api(req, res, pathname) {
     if (b.end !== undefined) {
       if (b.end !== null && !Number.isSafeInteger(b.end)) return send(res, 400, { error: 'Bad time.' });
       vals.push(b.end); sets.push(`end_ts = $${vals.length}`);
+    }
+    if (b.type !== undefined) {
+      if (b.type !== null && !['breast', 'formula', 'both'].includes(b.type)) return send(res, 400, { error: 'Bad type.' });
+      vals.push(b.type); sets.push(`type = $${vals.length}`);
+    }
+    if (b.ml !== undefined) {
+      if (b.ml !== null && !(Number.isInteger(b.ml) && b.ml >= 0 && b.ml <= 2000)) return send(res, 400, { error: 'Bad amount.' });
+      vals.push(b.ml); sets.push(`ml = $${vals.length}`);
     }
     if (!sets.length) return send(res, 400, { error: 'Nothing to update.' });
     vals.push(m[1], user.id);

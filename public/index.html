@@ -77,17 +77,17 @@
   .actions .stamp { margin-top: 0; width: auto; flex: 1; }
   .endbtn { flex: none; width: 104px; height: 60px; border-radius: 999px; font-weight: 800; font-size: 18px; letter-spacing: .3px; background: #f6e3a6; color: #6b5316; box-shadow: 0 8px 18px rgba(236,197,98,.35); transition: transform .08s, background .15s; }
   .endbtn:active:not(:disabled) { transform: translateY(2px) scale(.99); }
-  .endbtn:disabled { background: var(--blue-soft); color: #b5c2d8; box-shadow: none; }
+  .endbtn.wide { width: auto; flex: 1; }
   .stamp:active { transform: translateY(2px) scale(.99); box-shadow: 0 3px 8px rgba(85,119,179,.3); }
 
   .list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 14px -8px 0; padding: 0 8px 8px; overscroll-behavior: contain; }
   .list { --fs: clamp(12.5px, 3.8vw, 15px); }
-  .head, .row { display: grid; grid-template-columns: 70px 1fr 48px 20px; align-items: center; column-gap: 8px; }
-  .head.feed, .row.feed { grid-template-columns: 70px 1fr 1fr 48px 20px; }
+  .head, .row { display: grid; grid-template-columns: 66px 1fr 44px; align-items: center; column-gap: 8px; }
+  .head.feed, .row.feed { grid-template-columns: 66px 1fr 1fr 34px 44px; }
   .head { position: sticky; top: 0; z-index: 3; background: #fff; padding: 2px 0 6px; font-size: 10px; font-weight: 700; color: #a9b7cf; letter-spacing: .4px; text-transform: uppercase; }
   .head .r { justify-self: end; width: max-content; white-space: nowrap; }
   .day { padding: 16px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: .8px; color: #9fb0cb; font-variant-numeric: tabular-nums; }
-  .row { padding: 11px 0; border-bottom: 1px solid var(--line); position: relative; font-size: var(--fs); }
+  .row { padding: 11px 0; border-bottom: 1px solid var(--line); position: relative; font-size: var(--fs); cursor: pointer; }
   .day + .row { border-top: 1px solid var(--line); }
   .row.pop { animation: pop .28s ease-out; }
   @keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -98,19 +98,23 @@
   .minus:active { background: #f9d5d9; }
   .plus { background: #e6f4ec; color: #3f9a66; }
   .plus:active { background: #cfeadb; }
-  .t, .e, .since b { font-size: var(--fs); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .t, .e, .m, .since b { font-size: var(--fs); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .t small, .e small { font-size: .78em; font-weight: 700; color: var(--muted); margin-left: .25em; }
   .t { font-weight: 800; color: var(--blue-dark); }
-  .e { font-weight: 700; color: #6b7fa6; }
+  .e, .m { font-weight: 700; color: #6b7fa6; }
+  .m .none { color: #c9d4e6; }
   .e .none { color: #c9d4e6; }
   .e .live { font-size: .8em; font-weight: 700; color: #b08f2f; display: inline-flex; align-items: center; gap: 5px; }
   .e .live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #ecc562; animation: pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .3; } }
   .since { text-align: right; }
   .since b { font-weight: 700; color: var(--blue); }
-  .delwrap { position: relative; height: 26px; }
-  .del { position: absolute; right: -2px; top: 50%; transform: translateY(-50%); min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; background: none; color: #c3cee0; font-size: 18px; font-weight: 600; line-height: 1; z-index: 1; white-space: nowrap; }
-  .del.armed { background: #e5707a; color: #fff; font-size: 11px; font-weight: 700; padding: 0 10px; }
+  .more { grid-column: 1 / -1; display: none; align-items: center; justify-content: space-between; padding: 12px 2px 2px; }
+  .row.open { background: #f8fbff; }
+  .row.open .more { display: flex; }
+  .kind { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .del { background: none; border: 1.5px solid #f0c9cd; color: #d9535f; font-weight: 700; font-size: 12.5px; height: 30px; padding: 0 14px; border-radius: 15px; white-space: nowrap; }
+  .del.armed { background: #e5707a; border-color: #e5707a; color: #fff; }
   .empty .eic { display: block; width: 64px; height: 64px; margin: 0 auto 12px; }
   .empty { text-align: center; color: var(--muted); font-weight: 600; padding: 34px 10px; font-size: 14px; line-height: 1.6; }
 
@@ -129,6 +133,24 @@
   .auth .stamp { margin-top: 0; }
   .auth .stamp:disabled { opacity: .7; }
   .link { background: none; color: var(--blue); font-weight: 700; font-size: 14px; padding: 8px; }
+  .sheet-wrap { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+  .backdrop { position: absolute; inset: 0; background: rgba(47,74,125,.38); animation: fade .2s ease-out; }
+  .sheet { position: relative; width: 100%; max-width: 460px; background: #fff; border-radius: 30px 30px 0 0; padding: 12px 24px max(22px, env(safe-area-inset-bottom)); box-shadow: 0 -10px 40px rgba(47,74,125,.18); animation: up .25s ease-out; }
+  @keyframes up { from { transform: translateY(40px); opacity: 0; } }
+  @keyframes fade { from { opacity: 0; } }
+  .grab { width: 40px; height: 4px; border-radius: 2px; background: #dbe5f3; margin: 0 auto 16px; }
+  .sheet h2 { text-align: center; font-size: 21px; font-weight: 800; margin: 0 0 6px; color: var(--blue-dark); }
+  .sheet-sub { text-align: center; color: var(--muted); font-size: 14px; font-weight: 600; margin: 0 0 10px; }
+  .opt { display: block; width: 100%; height: 58px; border-radius: 18px; background: #f3f7fc; color: var(--blue-dark); font-weight: 800; font-size: 17px; margin-top: 10px; transition: background .12s, transform .08s; }
+  .opt:first-of-type { margin-top: 18px; }
+  .opt:active { background: #e1ecf9; transform: scale(.99); }
+  .sheet .link { display: block; margin: 8px auto 0; }
+  .sheet .stamp { margin-top: 0; }
+  .wheel { position: relative; height: 220px; margin: 4px 0 18px; }
+  .band { position: absolute; left: 0; right: 0; top: 88px; height: 44px; border: 2px solid var(--yellow); background: #fdf6df; border-radius: 14px; }
+  .wscroll { position: relative; height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; padding: 88px 0; scrollbar-width: none; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .wscroll::-webkit-scrollbar { display: none; }
+  .wi { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-weight: 800; font-size: 22px; color: var(--blue-dark); font-variant-numeric: tabular-nums; cursor: pointer; }
   .toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: var(--blue-dark); color: #fff; font-weight: 700; font-size: 14px; padding: 10px 18px; border-radius: 999px; transition: .25s; z-index: 10; max-width: 90vw; text-align: center; }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -225,7 +247,7 @@
       <button class="tab" role="tab" data-tab="poop"><svg class="ic" aria-hidden="true"><use href="#icPoop"/></svg><span>Poo</span></button>
     </div>
 
-    <div class="actions"><button class="stamp" id="stamp">Stamp</button><button class="endbtn" id="end" hidden>End</button></div>
+    <div class="actions"><button class="stamp" id="stamp">Stamp</button><button class="stamp" id="mlbtn" hidden>Add ml</button><button class="endbtn" id="end" hidden>End</button></div>
 
     <div class="list" id="list"></div>
     </div>
@@ -254,6 +276,30 @@
       </svg>
     </div>
   </main>
+</div>
+
+<div class="sheet-wrap" id="sheetType" hidden>
+  <div class="backdrop"></div>
+  <div class="sheet" role="dialog" aria-label="Feed type">
+    <div class="grab"></div>
+    <h2>What kind of feed?</h2>
+    <button class="opt" data-type="breast">Breastfeed</button>
+    <button class="opt" data-type="formula">Formula</button>
+    <button class="opt" data-type="both">Both</button>
+    <button class="link" id="typeCancel">Cancel</button>
+  </div>
+</div>
+
+<div class="sheet-wrap" id="sheetMl" hidden>
+  <div class="backdrop" id="mlBackdrop"></div>
+  <div class="sheet" role="dialog" aria-label="Amount in ml">
+    <div class="grab"></div>
+    <h2>How much?</h2>
+    <p class="sheet-sub" id="mlSub">Formula</p>
+    <div class="wheel"><div class="band"></div><div class="wscroll" id="wscroll"></div></div>
+    <button class="stamp" id="mlDone">Done</button>
+    <button class="link" id="mlCancel">Cancel</button>
+  </div>
 </div>
 
 <div class="toast" id="toast" role="status"></div>
@@ -337,14 +383,22 @@
   const listEl = $('list');
   const sortTab = t => data[t].sort((a, b) => b.ts - a.ts); // stable
 
+  function kindText(rec) {
+    if (tab === 'pee') return 'Pee';
+    if (tab === 'poop') return 'Poo';
+    const base = { breast: 'Breastfeed', formula: 'Formula', both: 'Breast + formula' }[rec.type] || 'Feed';
+    return rec.ml ? base + ' · ' + rec.ml + ' ml' : base;
+  }
   function rowHTML(rec, older, newest) {
     const p = parts(rec.ts);
-    const feed = tab === 'feed';
-    let end = '';
-    if (feed) {
+    let mid = '';
+    if (tab === 'feed') {
+      let end;
       if (rec.end != null) { const e = parts(rec.end); end = `<div class="e">${e.hm}<small>${e.ap}</small></div>`; }
       else if (newest) end = '<div class="e"><span class="live">Feeding</span></div>';
       else end = '<div class="e"><span class="none">–</span></div>';
+      const ml = rec.ml ? `<div class="m">${rec.ml}</div>` : `<div class="m"><span class="none">${rec.end != null ? '–' : ''}</span></div>`;
+      mid = end + ml;
     }
     return `
       <div class="steps">
@@ -352,27 +406,31 @@
         <button class="adj plus" data-act="1" data-id="${rec.id}" aria-label="1 minute later">+</button>
       </div>
       <div class="t">${p.hm}<small>${p.ap}</small></div>
-      ${end}
-      <div class="since${older ? '' : ' none'}"><b>${older ? span(rec.ts - older.ts) : ''}</b></div>
-      <div class="delwrap"><button class="del" data-id="${rec.id}" aria-label="Delete this record">×</button></div>`;
+      ${mid}
+      <div class="since"><b>${older ? span(rec.ts - older.ts) : ''}</b></div>
+      <div class="more"><span class="kind">${kindText(rec)}</span><button class="del" data-id="${rec.id}">Delete</button></div>`;
   }
 
-  function updateEnd() {
-    const b = $('end');
-    b.hidden = tab !== 'feed';
-    const open = data.feed[0] && data.feed[0].end == null;
-    b.disabled = !open;
+  // Stamp / Add ml / End: show only what's relevant right now
+  function updateActions() {
+    const rec = data.feed[0];
+    const open = tab === 'feed' && !!rec && rec.end == null;
+    const withMl = open && (rec.type === 'formula' || rec.type === 'both');
+    $('stamp').hidden = open;
+    $('mlbtn').hidden = !withMl;
+    $('end').hidden = !open;
+    $('end').classList.toggle('wide', open && !withMl);
   }
 
   function render(popId) {
     const items = data[tab];
-    updateEnd();
+    updateActions();
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     if (!items.length) { listEl.innerHTML = `<div class="empty"><svg class="eic" aria-hidden="true"><use href="#${ICON[tab]}"/></svg>${EMPTY[tab]}</div>`; return; }
     const feed = tab === 'feed';
     listEl.innerHTML = feed
-      ? '<div class="head feed"><span></span><span>Start</span><span>End</span><span class="r">Since last</span><span></span></div>'
-      : '<div class="head"><span></span><span>Time</span><span class="r">Since last</span><span></span></div>';
+      ? '<div class="head feed"><span></span><span>Start</span><span>End</span><span>ML</span><span class="r">Since last</span></div>'
+      : '<div class="head"><span></span><span>Time</span><span class="r">Since last</span></div>';
     let lastDay = '';
     items.forEach((rec, i) => {
       const day = dayLabel(rec.ts);
@@ -407,20 +465,84 @@
     render(); listEl.scrollTop = 0;
   });
 
+  const floorMin = t => Math.floor(t / 60000) * 60000;
+  // run a request after the record's own creation request has finished
+  const after = (rec, fn) => (rec.p || Promise.resolve()).then(fn).catch(saveFailed);
+  function showSheet(id) { $(id).hidden = false; }
+  function hideSheet(id) { $(id).hidden = true; }
+
+  let pendingRec = null;
   $('stamp').addEventListener('click', () => {
-    const rec = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: Math.floor(Date.now() / 60000) * 60000 };
+    const rec = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: floorMin(Date.now()), end: null, type: null, ml: null };
     data[tab].unshift(rec); sortTab(tab); render(rec.id); listEl.scrollTop = 0;
     if (navigator.vibrate) navigator.vibrate(15);
-    api('POST', '/api/records', { id: rec.id, tab, ts: rec.ts }).catch(saveFailed);
+    rec.p = api('POST', '/api/records', { id: rec.id, tab, ts: rec.ts }).catch(saveFailed);
+    if (tab === 'feed') { pendingRec = rec; showSheet('sheetType'); }
+  });
+
+  document.querySelectorAll('#sheetType .opt').forEach(b => b.addEventListener('click', () => {
+    const rec = pendingRec; if (!rec) return;
+    pendingRec = null; rec.type = b.dataset.type;
+    hideSheet('sheetType'); render();
+    after(rec, () => api('PATCH', '/api/records/' + rec.id, { type: rec.type }));
+  }));
+  $('typeCancel').addEventListener('click', () => {
+    const rec = pendingRec; if (!rec) return;
+    pendingRec = null;
+    data.feed = data.feed.filter(r => r !== rec);
+    hideSheet('sheetType'); render();
+    after(rec, () => api('DELETE', '/api/records/' + rec.id));
   });
 
   $('end').addEventListener('click', () => {
     const rec = data.feed[0];
     if (!rec || rec.end != null) return;
-    rec.end = Math.max(rec.ts, Math.floor(Date.now() / 60000) * 60000);
+    rec.end = Math.max(rec.ts, floorMin(Date.now()));
     render();
     if (navigator.vibrate) navigator.vibrate(15);
-    api('PATCH', '/api/records/' + rec.id, { end: rec.end }).catch(saveFailed);
+    after(rec, () => api('PATCH', '/api/records/' + rec.id, { end: rec.end }));
+  });
+
+  // ---------- ml picker (scroll wheel) ----------
+  const ROW_H = 44, VALUES = [];
+  for (let v = 5; v <= 300; v += 5) VALUES.push(v);
+  const wheel = $('wscroll');
+  wheel.innerHTML = VALUES.map(v => `<div class="wi" data-i="${VALUES.indexOf(v)}">${v} ml</div>`).join('');
+  const wheelItems = [...wheel.children];
+  let wIdx = 0, wRaf = 0;
+  function paintWheel() {
+    wRaf = 0;
+    wIdx = Math.max(0, Math.min(VALUES.length - 1, Math.round(wheel.scrollTop / ROW_H)));
+    wheelItems.forEach((el, i) => {
+      const d = Math.abs(i - wIdx);
+      el.style.opacity = d === 0 ? 1 : d === 1 ? .5 : d === 2 ? .25 : .1;
+    });
+  }
+  wheel.addEventListener('scroll', () => { if (!wRaf) wRaf = requestAnimationFrame(paintWheel); }, { passive: true });
+  wheel.addEventListener('click', e => {
+    const it = e.target.closest('.wi'); if (!it) return;
+    wheel.scrollTo({ top: +it.dataset.i * ROW_H, behavior: 'smooth' });
+  });
+
+  let mlRec = null;
+  $('mlbtn').addEventListener('click', () => {
+    const rec = data.feed[0]; if (!rec || rec.end != null) return;
+    mlRec = rec;
+    $('mlSub').textContent = rec.type === 'both' ? 'Breast + formula' : 'Formula';
+    showSheet('sheetMl');
+    wheel.scrollTop = VALUES.indexOf(rec.type === 'both' ? 30 : 60) * ROW_H;
+    paintWheel();
+  });
+  const closeMl = () => { mlRec = null; hideSheet('sheetMl'); };
+  $('mlCancel').addEventListener('click', closeMl);
+  $('mlBackdrop').addEventListener('click', closeMl);
+  $('mlDone').addEventListener('click', () => {
+    const rec = mlRec; if (!rec) return;
+    rec.ml = VALUES[wIdx];
+    rec.end = Math.max(rec.ts, floorMin(Date.now()));
+    closeMl(); render();
+    if (navigator.vibrate) navigator.vibrate(15);
+    after(rec, () => api('PATCH', '/api/records/' + rec.id, { end: rec.end, ml: rec.ml }));
   });
 
   // +/- with press-and-hold repeat (delegated so re-renders don't break it)
@@ -437,7 +559,7 @@
       sortTab(tab); render();
       ids.forEach(id => {
         const rec = data[tab].find(r => r.id === id);
-        if (rec) api('PATCH', '/api/records/' + id, { ts: rec.ts }).catch(saveFailed);
+        if (rec) after(rec, () => api('PATCH', '/api/records/' + id, { ts: rec.ts }));
       });
     }
   }
@@ -451,20 +573,29 @@
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => window.addEventListener(ev, () => { if (holdT || holdI || moved.size) stopHold(); }));
   listEl.addEventListener('contextmenu', e => e.preventDefault());
 
-  // delete: first tap arms ("Delete?"), second tap within 3s removes
+  // tap a row to reveal its details + delete (delete needs a second tap to confirm)
   let armedBtn = null, armedT = null;
-  function disarm() { clearTimeout(armedT); if (armedBtn) { armedBtn.classList.remove('armed'); armedBtn.textContent = '×'; } armedBtn = null; }
+  function disarm() { clearTimeout(armedT); if (armedBtn) { armedBtn.classList.remove('armed'); armedBtn.textContent = 'Delete'; } armedBtn = null; }
   listEl.addEventListener('click', e => {
-    const b = e.target.closest('.del'); if (!b) return;
-    if (armedBtn === b) {
-      const id = b.dataset.id;
-      data[tab] = data[tab].filter(r => r.id !== id);
-      disarm(); render();
-      api('DELETE', '/api/records/' + id).catch(saveFailed);
+    const d = e.target.closest('.del');
+    if (d) {
+      if (armedBtn === d) {
+        const id = d.dataset.id, rec = data[tab].find(r => r.id === id);
+        data[tab] = data[tab].filter(r => r.id !== id);
+        disarm(); render();
+        if (rec) after(rec, () => api('DELETE', '/api/records/' + id));
+        return;
+      }
+      disarm(); armedBtn = d; d.classList.add('armed'); d.textContent = 'Tap again to delete';
+      armedT = setTimeout(disarm, 3000);
       return;
     }
-    disarm(); armedBtn = b; b.classList.add('armed'); b.textContent = 'Delete?';
-    armedT = setTimeout(disarm, 3000);
+    if (e.target.closest('.adj')) return;
+    const row = e.target.closest('.row'); if (!row) return;
+    const wasOpen = row.classList.contains('open');
+    listEl.querySelectorAll('.row.open').forEach(r => r.classList.remove('open'));
+    disarm();
+    if (!wasOpen) row.classList.add('open');
   });
 
   // ---------- auth ----------
