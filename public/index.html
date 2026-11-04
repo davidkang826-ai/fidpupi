@@ -81,33 +81,35 @@
   .stamp:active { transform: translateY(2px) scale(.99); box-shadow: 0 3px 8px rgba(85,119,179,.3); }
 
   .list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 14px -8px 0; padding: 0 8px 8px; overscroll-behavior: contain; }
-  .list { --fs: clamp(11.5px, 3.5vw, 14.5px); }
-  .row, .head { display: grid; grid-template-columns: 74px calc(var(--fs) * 4.7) 1fr calc(var(--fs) * 3.4) 20px; align-items: center; column-gap: 8px; row-gap: 0; }
-  .row { padding: 14px 0; border-bottom: 1px solid var(--line); position: relative; font-size: var(--fs); }
-  .head { position: sticky; top: 0; z-index: 2; background: #fff; padding: 2px 0 8px; font-size: 10px; font-weight: 700; color: #a9b7cf; letter-spacing: .3px; }
-  .head .h-since { text-align: right; white-space: nowrap; margin-right: -4px; }
+  .list { --fs: clamp(12.5px, 3.8vw, 15px); }
+  .head, .row { display: grid; grid-template-columns: 70px 1fr 48px 20px; align-items: center; column-gap: 8px; }
+  .head.feed, .row.feed { grid-template-columns: 70px 1fr 1fr 48px 20px; }
+  .head { position: sticky; top: 0; z-index: 3; background: #fff; padding: 2px 0 6px; font-size: 10px; font-weight: 700; color: #a9b7cf; letter-spacing: .4px; text-transform: uppercase; }
+  .head .r { justify-self: end; width: max-content; white-space: nowrap; }
+  .day { padding: 16px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: .8px; color: #9fb0cb; font-variant-numeric: tabular-nums; }
+  .row { padding: 11px 0; border-bottom: 1px solid var(--line); position: relative; font-size: var(--fs); }
+  .day + .row { border-top: 1px solid var(--line); }
   .row.pop { animation: pop .28s ease-out; }
   @keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
   .steps { display: flex; gap: 6px; }
-  .adj { width: 34px; height: 34px; border-radius: 50%; border: 0; font-weight: 700; font-size: 21px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; transition: transform .08s, background .12s; }
+  .adj { width: 32px; height: 32px; border-radius: 50%; border: 0; font-weight: 700; font-size: 19px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; transition: transform .08s, background .12s; }
   .adj:active { transform: scale(.92); }
   .minus { background: #fdecee; color: #d9535f; }
   .minus:active { background: #f9d5d9; }
   .plus { background: #e6f4ec; color: #3f9a66; }
   .plus:active { background: #cfeadb; }
-  .sub { grid-column: 2 / 5; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
-  .sub.live { color: #b08f2f; }
-  .sub.live::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ecc562; margin-right: 6px; animation: pulse 1.4s ease-in-out infinite; }
-  @keyframes pulse { 50% { opacity: .35; } }
-  .t, .d, .since b { font-size: var(--fs); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .t, .e, .since b { font-size: var(--fs); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .t small, .e small { font-size: .78em; font-weight: 700; color: var(--muted); margin-left: .25em; }
   .t { font-weight: 800; color: var(--blue-dark); }
-  .t small { font-size: inherit; font-weight: 700; color: var(--muted); margin-left: .25em; }
-  .d { font-weight: 600; color: #7f92b2; }
+  .e { font-weight: 700; color: #6b7fa6; }
+  .e .none { color: #c9d4e6; }
+  .e .live { font-size: .8em; font-weight: 700; color: #b08f2f; display: inline-flex; align-items: center; gap: 5px; }
+  .e .live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #ecc562; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
   .since { text-align: right; }
   .since b { font-weight: 700; color: var(--blue); }
-  .since.none b { color: #c9d4e6; }
   .delwrap { position: relative; height: 26px; }
-  .del { position: absolute; right: 0; top: 50%; transform: translateY(-50%); min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; background: none; color: #c3cee0; font-size: 18px; font-weight: 600; line-height: 1; z-index: 1; white-space: nowrap; }
+  .del { position: absolute; right: -2px; top: 50%; transform: translateY(-50%); min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; background: none; color: #c3cee0; font-size: 18px; font-weight: 600; line-height: 1; z-index: 1; white-space: nowrap; }
   .del.armed { background: #e5707a; color: #fff; font-size: 11px; font-weight: 700; padding: 0 10px; }
   .empty .eic { display: block; width: 64px; height: 64px; margin: 0 auto 12px; }
   .empty { text-align: center; color: var(--muted); font-weight: 600; padding: 34px 10px; font-size: 14px; line-height: 1.6; }
@@ -335,29 +337,24 @@
   const listEl = $('list');
   const sortTab = t => data[t].sort((a, b) => b.ts - a.ts); // stable
 
-  function durText(ms) {
-    const m = Math.max(0, Math.round(ms / 60000));
-    return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
-  }
-  function subInfo(rec, newest) {
-    if (tab !== 'feed') return null;
-    if (rec.end != null) { const e = parts(rec.end); return { text: 'Ended ' + e.hm + ' ' + e.ap + ' · ' + durText(rec.end - rec.ts), live: false }; }
-    return newest ? { text: 'Feeding…', live: true } : null;
-  }
   function rowHTML(rec, older, newest) {
-    const sub = subInfo(rec, newest);
     const p = parts(rec.ts);
-    const since = older ? span(rec.ts - older.ts) : '–';
+    const feed = tab === 'feed';
+    let end = '';
+    if (feed) {
+      if (rec.end != null) { const e = parts(rec.end); end = `<div class="e">${e.hm}<small>${e.ap}</small></div>`; }
+      else if (newest) end = '<div class="e"><span class="live">Feeding</span></div>';
+      else end = '<div class="e"><span class="none">–</span></div>';
+    }
     return `
       <div class="steps">
         <button class="adj minus" data-act="-1" data-id="${rec.id}" aria-label="1 minute earlier">−</button>
         <button class="adj plus" data-act="1" data-id="${rec.id}" aria-label="1 minute later">+</button>
       </div>
       <div class="t">${p.hm}<small>${p.ap}</small></div>
-      <div class="d">${dayLabel(rec.ts)}</div>
-      <div class="since${older ? '' : ' none'}"><b>${since}</b></div>
-      <div class="delwrap"><button class="del" data-id="${rec.id}" aria-label="Delete this record">×</button></div>
-      ${sub ? `<div class="sub${sub.live ? ' live' : ''}">${sub.text}</div>` : ''}`;
+      ${end}
+      <div class="since${older ? '' : ' none'}"><b>${older ? span(rec.ts - older.ts) : ''}</b></div>
+      <div class="delwrap"><button class="del" data-id="${rec.id}" aria-label="Delete this record">×</button></div>`;
   }
 
   function updateEnd() {
@@ -366,15 +363,25 @@
     const open = data.feed[0] && data.feed[0].end == null;
     b.disabled = !open;
   }
+
   function render(popId) {
     const items = data[tab];
     updateEnd();
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     if (!items.length) { listEl.innerHTML = `<div class="empty"><svg class="eic" aria-hidden="true"><use href="#${ICON[tab]}"/></svg>${EMPTY[tab]}</div>`; return; }
-    listEl.innerHTML = '<div class="head"><span></span><span>Time</span><span>Date</span><span class="h-since">Since last</span><span></span></div>';
+    const feed = tab === 'feed';
+    listEl.innerHTML = feed
+      ? '<div class="head feed"><span></span><span>Start</span><span>End</span><span class="r">Since last</span><span></span></div>'
+      : '<div class="head"><span></span><span>Time</span><span class="r">Since last</span><span></span></div>';
+    let lastDay = '';
     items.forEach((rec, i) => {
+      const day = dayLabel(rec.ts);
+      if (day !== lastDay) {
+        lastDay = day;
+        const h = document.createElement('div'); h.className = 'day'; h.textContent = day; listEl.appendChild(h);
+      }
       const row = document.createElement('div');
-      row.className = 'row' + (rec.id === popId ? ' pop' : '');
+      row.className = 'row' + (feed ? ' feed' : '') + (rec.id === popId ? ' pop' : '');
       row.dataset.id = rec.id;
       row.innerHTML = rowHTML(rec, items[i + 1], i === 0);
       listEl.appendChild(row);
@@ -389,12 +396,7 @@
       if (!row) return;
       const p = parts(rec.ts), older = items[i + 1];
       row.querySelector('.t').innerHTML = `${p.hm}<small>${p.ap}</small>`;
-      row.querySelector('.d').textContent = dayLabel(rec.ts);
-      const s = row.querySelector('.since');
-      s.classList.toggle('none', !older);
-      s.querySelector('b').textContent = older ? span(rec.ts - older.ts) : '–';
-      const sub = subInfo(rec, i === 0), el = row.querySelector('.sub');
-      if (sub && el) el.textContent = sub.text;
+      row.querySelector('.since b').textContent = older ? span(rec.ts - older.ts) : '';
     });
   }
 
