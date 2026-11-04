@@ -296,12 +296,8 @@
     const g = t => (p.find(x => x.type === t) || {}).value || '';
     return { hm: g('hour') + ':' + g('minute'), ap: g('dayPeriod') };
   }
-  function dayLabel(ts) {
-    const d = dayFmt.format(ts), now = Date.now();
-    if (d === dayFmt.format(now)) return 'Today';
-    if (d === dayFmt.format(now - 864e5)) return 'Yesterday';
-    return labelFmt.format(ts);
-  }
+  const mdyFmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: '2-digit', day: '2-digit', year: 'numeric' });
+  function dayLabel(ts) { return mdyFmt.format(ts).replace(/\//g, '-'); } // MM-DD-YYYY
   function span(ms) {
     const m = Math.max(0, Math.round(ms / 60000));
     return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
@@ -318,7 +314,7 @@
     clockEl.firstChild.nodeValue = p.hm;
     ampmEl.textContent = p.ap;
     const z = (tzFmt.formatToParts(Date.now()).find(x => x.type === 'timeZoneName') || {}).value;
-    $('tz').textContent = (childName ? childName + ' · ' : '') + (z === 'EDT' ? 'EDT' : 'EST');
+    $('tz').textContent = (childName ? childName + ' · ' : '') + dayLabel(Date.now()) + ' · ' + (z === 'EDT' ? 'EDT' : 'EST');
   }
   setInterval(tick, 1000); tick();
 
