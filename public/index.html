@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FidPuPi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#e6f0fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FidPuPi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #5577b3;
+    --blue-dark: #3f5f9f;
+    --blue-soft: #eaf1fa;
+    --blue-line: #c5d9f0;
+    --yellow: #ecc562;
+    --yellow-soft: #fdf6df;
+    --green: #8fa96f;
+    --ink: #4467a3;
+    --muted: #8a9bb8;
+    --card: #ffffff;
+    --row: #f5f9fe;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    background: linear-gradient(180deg, #e9f2fc 0%, #d9e7f7 100%) fixed;
+    color: var(--ink);
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+    touch-action: manipulation;
+  }
+  button { font-family: inherit; touch-action: manipulation; cursor: pointer; border: 0; }
+
+  .app {
+    height: 100dvh;
+    max-width: 460px;
+    margin: 0 auto;
+    padding: max(8px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+  }
+
+  /* bear + hearts */
+  .bear-row {
+    position: relative; z-index: 2;
+    display: flex; justify-content: center; align-items: flex-end; gap: 6px;
+    height: clamp(84px, 14dvh, 118px);
+    margin-bottom: -16px;
+    flex: none;
+  }
+  .bear-row svg.bear { height: 100%; width: auto; }
+  .heart { width: 38px; height: 38px; margin-bottom: 38px; flex: none; }
+
+  /* card */
+  .card {
+    position: relative; flex: 1; min-height: 0;
+    background: var(--card);
+    border: 3px solid var(--blue-line);
+    border-radius: 38px;
+    box-shadow: 0 14px 36px rgba(85,119,179,.16);
+    padding: 22px 20px 0;
+    display: flex; flex-direction: column;
+  }
+  .card::before {
+    content: ''; position: absolute; inset: 7px;
+    border: 2px dashed #d3e2f4; border-radius: 30px; pointer-events: none;
+  }
+
+  .title {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: 30px; line-height: 1; text-align: center; letter-spacing: .5px;
+    margin-top: 6px;
+  }
+  .clock {
+    font-family: 'Fredoka', sans-serif; font-weight: 600;
+    text-align: center; color: var(--blue-dark);
+    font-size: 40px; line-height: 1.1; margin: 4px 0 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .clock small { font-size: 15px; color: var(--muted); margin-left: 4px; font-weight: 600; }
+  .clock .tz { display: block; font-family: 'Nunito'; font-size: 11px; letter-spacing: 1.5px; margin: -2px 0 0; color: var(--muted); }
+
+  /* tabs */
+  .tabs {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+    background: var(--blue-soft); border-radius: 999px; padding: 4px; flex: none;
+  }
+  .tab {
+    background: transparent; color: #7c93b8;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px;
+    height: 44px; border-radius: 999px; border: 2px solid transparent;
+    transition: background .15s, color .15s;
+  }
+  .tab.active { background: var(--yellow-soft); border-color: var(--yellow); color: var(--blue-dark); }
+
+  /* stamp */
+  .stamp {
+    flex: none; margin-top: 14px; width: 100%; height: 72px; border-radius: 999px;
+    background: var(--blue); color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: .5px;
+    box-shadow: 0 5px 0 var(--blue-dark);
+    transition: transform .06s, box-shadow .06s;
+  }
+  .stamp:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--blue-dark); }
+
+  /* list */
+  .list {
+    flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    margin: 14px -6px 0; padding: 0 6px 8px;
+    overscroll-behavior: contain;
+  }
+  .row {
+    display: grid; grid-template-columns: 44px 1fr auto 44px; align-items: center; gap: 8px;
+    background: var(--row); border-radius: 20px; padding: 8px; margin-bottom: 8px; position: relative;
+  }
+  .del {
+    position: absolute; top: -7px; right: -3px; min-width: 26px; height: 26px; padding: 0 7px;
+    border-radius: 13px; background: #fff; border: 2px solid var(--blue-line); color: var(--muted);
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; line-height: 1; z-index: 1;
+  }
+  .del.armed { background: #e5707a; border-color: #e5707a; color: #fff; font-size: 12px; }
+  .row.pop { animation: pop .28s ease-out; }
+  @keyframes pop { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+  .adj {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--blue-soft); color: var(--ink);
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .adj:active { background: var(--blue-line); }
+  .when { text-align: center; min-width: 0; }
+  .when .t { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 25px; color: var(--blue-dark); line-height: 1.05; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .when .t small { font-size: 12px; color: var(--muted); margin-left: 2px; }
+  .when .d { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .since { text-align: center; min-width: 58px; background: var(--yellow-soft); border: 2px solid #f3dd9b; border-radius: 14px; padding: 3px 6px; }
+  .since b { display: block; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: var(--blue-dark); line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .since span { display: block; font-size: 9px; color: #b08f2f; font-weight: 700; letter-spacing: .3px; }
+  .since.none { background: transparent; border-color: transparent; }
+  .since.none b { color: #c3cfe2; }
+
+  .empty { text-align: center; color: var(--muted); font-weight: 700; padding: 26px 10px; font-size: 15px; line-height: 1.5; }
+
+  /* footer decor */
+  .decor { flex: none; height: 46px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 6px 12px; position: relative; z-index: 1; }
+  .decor svg { display: block; }
+
+  @media (max-height: 640px) {
+    .clock { font-size: 32px; margin-bottom: 6px; }
+    .title { font-size: 24px; }
+    .stamp { height: 62px; margin-top: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="flB" viewBox="0 0 24 24">
+      <g fill="#8aa9dc"><circle cx="12" cy="6" r="5"/><circle cx="18" cy="11" r="5"/><circle cx="16" cy="18" r="5"/><circle cx="8" cy="18" r="5"/><circle cx="6" cy="11" r="5"/></g>
+      <circle cx="12" cy="13" r="3.2" fill="#ecc562"/>
+    </symbol>
+    <symbol id="flY" viewBox="0 0 24 24">
+      <g fill="#fdf0c4"><circle cx="12" cy="6" r="5"/><circle cx="18" cy="11" r="5"/><circle cx="16" cy="18" r="5"/><circle cx="8" cy="18" r="5"/><circle cx="6" cy="11" r="5"/></g>
+      <circle cx="12" cy="13" r="3.2" fill="#ecc562"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <div class="bear-row">
+    <svg class="heart" viewBox="0 0 24 24" fill="none" stroke="#8aa9dc" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.800-8 11-8 11z"/></svg>
+    <svg class="bear" viewBox="0 0 220 140" aria-hidden="true">
+      <g stroke="#b5845a" stroke-width="3">
+        <circle cx="56" cy="30" r="24" fill="#d4ae82"/><circle cx="164" cy="30" r="24" fill="#d4ae82"/>
+      </g>
+      <circle cx="56" cy="30" r="12" fill="#c4976a"/><circle cx="164" cy="30" r="12" fill="#c4976a"/>
+      <circle cx="110" cy="72" r="58" fill="#d4ae82" stroke="#b5845a" stroke-width="3"/>
+      <circle cx="88" cy="64" r="5" fill="#4a3426"/><circle cx="132" cy="64" r="5" fill="#4a3426"/>
+      <ellipse cx="70" cy="82" rx="12" ry="8" fill="#e8a9a0" opacity=".75"/><ellipse cx="150" cy="82" rx="12" ry="8" fill="#e8a9a0" opacity=".75"/>
+      <ellipse cx="110" cy="86" rx="21" ry="16" fill="#f2dfbd"/>
+      <ellipse cx="110" cy="78" rx="8" ry="6" fill="#4a3426"/>
+      <path d="M110 83v6M100 91q10 8 20 0" stroke="#4a3426" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <g fill="#d4ae82" stroke="#b5845a" stroke-width="3">
+        <ellipse cx="82" cy="128" rx="25" ry="13"/><ellipse cx="138" cy="128" rx="25" ry="13"/>
+      </g>
+      <g stroke="#b5845a" stroke-width="2" stroke-linecap="round">
+        <path d="M74 124v6M82 123v7M90 124v6M130 124v6M138 123v7M146 124v6"/>
+      </g>
+    </svg>
+    <svg class="heart" viewBox="0 0 24 24" fill="none" stroke="#ecc562" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.800-8 11-8 11z"/></svg>
+  </div>
+
+  <main class="card">
+    <div class="title" aria-label="FidPuPi">
+      <span style="color:#7b9bd1">F</span><span style="color:#9ab5de">i</span><span style="color:#7b9bd1">d</span><span style="color:#ecc562">P</span><span style="color:#8fa96f">u</span><span style="color:#7b9bd1">P</span><span style="color:#9ab5de">i</span>
+    </div>
+    <div class="clock" id="clock">--:--<small id="ampm"></small><span class="tz" id="tz">EASTERN</span></div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="feed">🍼 Feed</button>
+      <button class="tab" role="tab" data-tab="pee">💧 Pee</button>
+      <button class="tab" role="tab" data-tab="poop">💩 Poop</button>
+    </div>
+
+    <button class="stamp" id="stamp">Stamp</button>
+
+    <div class="list" id="list"></div>
+
+    <div class="decor" aria-hidden="true">
+      <svg width="56" height="34" viewBox="0 0 80 50">
+        <g fill="#ecc562"><polygon points="22,20 28,5 34,20"/><polygon points="34,17 41,2 48,17"/><polygon points="46,20 51,9 56,21"/></g>
+        <path d="M14 28L0 37l17 1z" fill="#99c58f"/>
+        <ellipse cx="38" cy="30" rx="26" ry="14" fill="#99c58f"/>
+        <circle cx="62" cy="27" r="11" fill="#99c58f"/>
+        <rect x="22" y="38" width="9" height="10" rx="4.500" fill="#7fb078"/><rect x="46" y="38" width="9" height="10" rx="4.500" fill="#7fb078"/>
+        <g fill="#b6d9ad"><circle cx="30" cy="28" r="3"/><circle cx="42" cy="34" r="2.500"/><circle cx="46" cy="25" r="2"/></g>
+        <circle cx="65" cy="25" r="2.200" fill="#3a3a4a"/><circle cx="58" cy="31" r="2" fill="#e9a9a0"/>
+        <path d="M61 31q5 4 9 -1" stroke="#3a3a4a" stroke-width="1.800" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div style="display:flex;gap:2px;align-items:flex-end"><svg width="24" height="24"><use href="#flY"/></svg><svg width="22" height="22"><use href="#flB"/></svg></div>
+      <div style="display:flex;gap:2px;align-items:flex-end"><svg width="22" height="22"><use href="#flB"/></svg><svg width="24" height="24"><use href="#flY"/></svg></div>
+      <svg width="56" height="34" viewBox="0 0 80 50">
+        <path d="M50 18L56 2l14 4-8 14z" fill="#ecc562"/>
+        <path d="M60 38q16 2 17-12" stroke="#8bb0de" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <ellipse cx="44" cy="30" rx="23" ry="15" fill="#8bb0de"/>
+        <ellipse cx="46" cy="35" rx="12" ry="9" fill="#f1e4c3"/>
+        <ellipse cx="34" cy="46" rx="9" ry="4" fill="#6f9bd3"/><ellipse cx="56" cy="46" rx="9" ry="4" fill="#6f9bd3"/>
+        <circle cx="22" cy="24" r="12" fill="#8bb0de"/>
+        <g fill="#ecc562"><polygon points="13,17 9,6 21,14"/><polygon points="24,14 28,3 32,16"/></g>
+        <circle cx="18" cy="23" r="2.200" fill="#3a3a4a"/><circle cx="25" cy="29" r="2" fill="#e9a9a0"/>
+        <path d="M14 28q5 4 9 0" stroke="#3a3a4a" stroke-width="1.800" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  const TZ = 'America/New_York';
+  const KEY = 'fidpupi.v1';
+  const TABS = ['feed', 'pee', 'poop'];
+  const EMPTY = {
+    feed: 'No feedings yet 🍼<br>Tap “Stamp” when baby eats.',
+    pee: 'No pees yet 💧<br>Tap “Stamp” to record one.',
+    poop: 'No poops yet 💩<br>Tap “Stamp” to record one.',
+  };
+
+  // ---------- state ----------
+  let state = { tab: 'feed', data: { feed: [], pee: [], poop: [] } };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (saved && saved.data) {
+      state.tab = TABS.includes(saved.tab) ? saved.tab : 'feed';
+      TABS.forEach(t => { if (Array.isArray(saved.data[t])) state.data[t] = saved.data[t]; });
+    }
+  } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+  // ---------- time helpers (all Eastern) ----------
+  const timeFmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true });
+  const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const labelFmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' });
+  const tzFmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'short' });
+
+  function parts(ts) {
+    const p = timeFmt.formatToParts(ts);
+    const g = t => (p.find(x => x.type === t) || {}).value || '';
+    return { hm: g('hour') + ':' + g('minute'), ap: g('dayPeriod') };
+  }
+  function dayLabel(ts) {
+    const d = dayFmt.format(ts), now = Date.now();
+    if (d === dayFmt.format(now)) return 'Today';
+    if (d === dayFmt.format(now - 864e5)) return 'Yesterday';
+    return labelFmt.format(ts);
+  }
+  function span(ms) {
+    const m = Math.max(0, Math.round(ms / 60000));
+    return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  }
+
+  // ---------- clock ----------
+  const clockEl = document.getElementById('clock');
+  const ampmEl = document.getElementById('ampm');
+  let lastMinute = -1;
+  function tick() {
+    const m = Math.floor(Date.now() / 60000);
+    if (m === lastMinute) return;
+    lastMinute = m;
+    const p = parts(Date.now());
+    clockEl.firstChild.nodeValue = p.hm;
+    ampmEl.textContent = p.ap;
+    document.getElementById('tz').textContent = (tzFmt.formatToParts(Date.now()).find(x => x.type === 'timeZoneName') || {}).value === 'EDT' ? 'EASTERN · EDT' : 'EASTERN · EST';
+  }
+  setInterval(tick, 1000); tick();
+
+  // ---------- render ----------
+  const listEl = document.getElementById('list');
+
+  function sortTab(t) { state.data[t].sort((a, b) => b.ts - a.ts); } // stable
+
+  function rowHTML(rec, older) {
+    const p = parts(rec.ts);
+    const since = older ? span(rec.ts - older.ts) : '–';
+    return `
+      <button class="adj" data-act="-1" data-id="${rec.id}" aria-label="1 minute earlier">−</button>
+      <div class="when"><div class="t">${p.hm}<small>${p.ap}</small></div><div class="d">${dayLabel(rec.ts)}</div></div>
+      <div class="since${older ? '' : ' none'}"><b>${since}</b><span>since last</span></div>
+      <button class="adj" data-act="1" data-id="${rec.id}" aria-label="1 minute later">+</button>
+      <button class="del" data-id="${rec.id}" aria-label="Delete this record">×</button>`;
+  }
+
+  function render(popId) {
+    const items = state.data[state.tab];
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === state.tab));
+    if (!items.length) { listEl.innerHTML = `<div class="empty">${EMPTY[state.tab]}</div>`; return; }
+    listEl.innerHTML = '';
+    items.forEach((rec, i) => {
+      const row = document.createElement('div');
+      row.className = 'row' + (rec.id === popId ? ' pop' : '');
+      row.dataset.id = rec.id;
+      row.innerHTML = rowHTML(rec, items[i + 1]);
+      listEl.appendChild(row);
+    });
+  }
+
+  // update text without replacing nodes (so press-and-hold keeps working)
+  function refreshInPlace() {
+    const items = state.data[state.tab];
+    items.forEach((rec, i) => {
+      const row = listEl.querySelector(`.row[data-id="${rec.id}"]`);
+      if (!row) return;
+      const p = parts(rec.ts), older = items[i + 1];
+      row.querySelector('.t').innerHTML = `${p.hm}<small>${p.ap}</small>`;
+      row.querySelector('.d').textContent = dayLabel(rec.ts);
+      const s = row.querySelector('.since');
+      s.classList.toggle('none', !older);
+      s.querySelector('b').textContent = older ? span(rec.ts - older.ts) : '–';
+    });
+  }
+
+  // ---------- actions ----------
+  document.querySelector('.tabs').addEventListener('click', e => {
+    const b = e.target.closest('.tab'); if (!b) return;
+    state.tab = b.dataset.tab; save(); render(); listEl.scrollTop = 0;
+  });
+
+  document.getElementById('stamp').addEventListener('click', () => {
+    const rec = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: Math.floor(Date.now() / 60000) * 60000 };
+    state.data[state.tab].unshift(rec);
+    sortTab(state.tab); save(); render(rec.id); listEl.scrollTop = 0;
+    if (navigator.vibrate) navigator.vibrate(15);
+  });
+
+  // +/- with press-and-hold repeat (delegated so re-renders don't break it)
+  let holdT = null, holdI = null, moved = false;
+  function nudge(id, dir) {
+    const rec = state.data[state.tab].find(r => r.id === id); if (!rec) return;
+    rec.ts += dir * 60000; moved = true;
+    refreshInPlace();
+  }
+  function stopHold() {
+    clearTimeout(holdT); clearInterval(holdI); holdT = holdI = null;
+    if (moved) { moved = false; sortTab(state.tab); save(); render(); }
+  }
+  listEl.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.adj'); if (!b) return;
+    e.preventDefault();
+    const id = b.dataset.id, dir = +b.dataset.act;
+    nudge(id, dir);
+    holdT = setTimeout(() => { holdI = setInterval(() => nudge(id, dir), 90); }, 450);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => window.addEventListener(ev, () => { if (holdT || holdI || moved) stopHold(); }));
+  // delete: first tap arms ("Delete?"), second tap within 3s removes
+  let armedBtn = null, armedT = null;
+  function disarm() { clearTimeout(armedT); if (armedBtn) { armedBtn.classList.remove('armed'); armedBtn.textContent = '×'; } armedBtn = null; }
+  listEl.addEventListener('click', e => {
+    const b = e.target.closest('.del'); if (!b) return;
+    if (armedBtn === b) {
+      const t = state.tab;
+      state.data[t] = state.data[t].filter(r => r.id !== b.dataset.id);
+      disarm(); save(); render(); return;
+    }
+    disarm(); armedBtn = b; b.classList.add('armed'); b.textContent = 'Delete?';
+    armedT = setTimeout(disarm, 3000);
+  });
+  listEl.addEventListener('contextmenu', e => e.preventDefault());
+
+  // refresh "Today/Yesterday" labels when the app comes back to the foreground
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { lastMinute = -1; tick(); render(); } });
+
+  render();
+})();
+</script>
+</body>
+</html>
