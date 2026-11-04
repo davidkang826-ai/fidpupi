@@ -38,6 +38,7 @@ async function migrate() {
       tab TEXT NOT NULL,
       ts BIGINT NOT NULL
     );
+    ALTER TABLE records ADD COLUMN IF NOT EXISTS end_ts BIGINT;
     CREATE INDEX IF NOT EXISTS records_user_idx ON records(user_id, tab, ts DESC);
   `);
 }
@@ -150,9 +151,9 @@ async function api(req, res, pathname) {
   if (pathname === '/api/me' && method === 'GET') return send(res, 200, { child: user.child_name, email: user.email });
 
   if (pathname === '/api/records' && method === 'GET') {
-    const r = await pool.query('SELECT id, tab, ts FROM records WHERE user_id = $1 ORDER BY ts DESC LIMIT 5000', [user.id]);
+    const r = await pool.query('SELECT id, tab, ts, end_ts FROM records WHERE user_id = $1 ORDER BY ts DESC LIMIT 5000', [user.id]);
     const out = { feed: [], pee: [], poop: [] };
-    r.rows.forEach(x => out[x.tab] && out[x.tab].push({ id: x.id, ts: Number(x.ts) }));
+    r.rows.forEach(x => out[x.tab] && out[x.tab].push({ id: x.id, ts: Number(x.ts), end: x.end_ts == null ? null : Number(x.end_ts) }));
     return send(res, 200, out);
   }
 
@@ -169,8 +170,18 @@ async function api(req, res, pathname) {
   const m = pathname.match(/^\/api\/records\/([a-z0-9]{1,40})$/i);
   if (m && method === 'PATCH') {
     const b = await readJSON(req);
-    if (!Number.isSafeInteger(b.ts)) return send(res, 400, { error: 'Bad time.' });
-    await pool.query('UPDATE records SET ts = $1 WHERE id = $2 AND user_id = $3', [b.ts, m[1], user.id]);
+    const sets = [], vals = [];
+    if (b.ts !== undefined) {
+      if (!Number.isSafeInteger(b.ts)) return send(res, 400, { error: 'Bad time.' });
+      vals.push(b.ts); sets.push(`ts = $${vals.length}`);
+    }
+    if (b.end !== undefined) {
+      if (b.end !== null && !Number.isSafeInteger(b.end)) return send(res, 400, { error: 'Bad time.' });
+      vals.push(b.end); sets.push(`end_ts = $${vals.length}`);
+    }
+    if (!sets.length) return send(res, 400, { error: 'Nothing to update.' });
+    vals.push(m[1], user.id);
+    await pool.query(`UPDATE records SET ${sets.join(', ')} WHERE id = $${vals.length - 1} AND user_id = $${vals.length}`, vals);
     return send(res, 200, { ok: true });
   }
   if (m && method === 'DELETE') {

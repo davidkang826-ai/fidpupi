@@ -73,11 +73,16 @@
     font-weight: 800; font-size: 18px; letter-spacing: .4px; box-shadow: 0 8px 18px rgba(85,119,179,.32);
     transition: transform .08s, box-shadow .08s;
   }
+  .actions { display: flex; gap: 10px; margin-top: 16px; flex: none; }
+  .actions .stamp { margin-top: 0; width: auto; flex: 1; }
+  .endbtn { flex: none; width: 104px; height: 60px; border-radius: 999px; font-weight: 800; font-size: 18px; letter-spacing: .3px; background: #f6e3a6; color: #6b5316; box-shadow: 0 8px 18px rgba(236,197,98,.35); transition: transform .08s, background .15s; }
+  .endbtn:active:not(:disabled) { transform: translateY(2px) scale(.99); }
+  .endbtn:disabled { background: var(--blue-soft); color: #b5c2d8; box-shadow: none; }
   .stamp:active { transform: translateY(2px) scale(.99); box-shadow: 0 3px 8px rgba(85,119,179,.3); }
 
   .list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 14px -8px 0; padding: 0 8px 8px; overscroll-behavior: contain; }
   .list { --fs: clamp(11.5px, 3.5vw, 14.5px); }
-  .row, .head { display: grid; grid-template-columns: 74px calc(var(--fs) * 4.7) 1fr calc(var(--fs) * 3.4) 20px; align-items: center; gap: 8px; }
+  .row, .head { display: grid; grid-template-columns: 74px calc(var(--fs) * 4.7) 1fr calc(var(--fs) * 3.4) 20px; align-items: center; column-gap: 8px; row-gap: 0; }
   .row { padding: 14px 0; border-bottom: 1px solid var(--line); position: relative; font-size: var(--fs); }
   .head { position: sticky; top: 0; z-index: 2; background: #fff; padding: 2px 0 8px; font-size: 10px; font-weight: 700; color: #a9b7cf; letter-spacing: .3px; }
   .head .h-since { text-align: right; white-space: nowrap; margin-right: -4px; }
@@ -90,6 +95,10 @@
   .minus:active { background: #f9d5d9; }
   .plus { background: #e6f4ec; color: #3f9a66; }
   .plus:active { background: #cfeadb; }
+  .sub { grid-column: 2 / 5; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .sub.live { color: #b08f2f; }
+  .sub.live::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ecc562; margin-right: 6px; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
   .t, .d, .since b { font-size: var(--fs); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .t { font-weight: 800; color: var(--blue-dark); }
   .t small { font-size: inherit; font-weight: 700; color: var(--muted); margin-left: .25em; }
@@ -123,6 +132,7 @@
 
   @media (max-height: 660px) {
     .clock { font-size: 44px; margin-top: 12px; }
+    .endbtn { height: 54px; } .actions { margin-top: 12px; }
     .tabs { margin-top: 14px; } .tab { height: 54px; } .tab .ic { width: 24px; height: 24px; } .stamp { height: 54px; }
   }
 </style>
@@ -213,7 +223,7 @@
       <button class="tab" role="tab" data-tab="poop"><svg class="ic" aria-hidden="true"><use href="#icPoop"/></svg><span>Poo</span></button>
     </div>
 
-    <button class="stamp" id="stamp">Stamp</button>
+    <div class="actions"><button class="stamp" id="stamp">Stamp</button><button class="endbtn" id="end" hidden>End</button></div>
 
     <div class="list" id="list"></div>
     </div>
@@ -325,7 +335,17 @@
   const listEl = $('list');
   const sortTab = t => data[t].sort((a, b) => b.ts - a.ts); // stable
 
-  function rowHTML(rec, older) {
+  function durText(ms) {
+    const m = Math.max(0, Math.round(ms / 60000));
+    return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+  }
+  function subInfo(rec, newest) {
+    if (tab !== 'feed') return null;
+    if (rec.end != null) { const e = parts(rec.end); return { text: 'Ended ' + e.hm + ' ' + e.ap + ' · ' + durText(rec.end - rec.ts), live: false }; }
+    return newest ? { text: 'Feeding…', live: true } : null;
+  }
+  function rowHTML(rec, older, newest) {
+    const sub = subInfo(rec, newest);
     const p = parts(rec.ts);
     const since = older ? span(rec.ts - older.ts) : '–';
     return `
@@ -336,11 +356,19 @@
       <div class="t">${p.hm}<small>${p.ap}</small></div>
       <div class="d">${dayLabel(rec.ts)}</div>
       <div class="since${older ? '' : ' none'}"><b>${since}</b></div>
-      <div class="delwrap"><button class="del" data-id="${rec.id}" aria-label="Delete this record">×</button></div>`;
+      <div class="delwrap"><button class="del" data-id="${rec.id}" aria-label="Delete this record">×</button></div>
+      ${sub ? `<div class="sub${sub.live ? ' live' : ''}">${sub.text}</div>` : ''}`;
   }
 
+  function updateEnd() {
+    const b = $('end');
+    b.hidden = tab !== 'feed';
+    const open = data.feed[0] && data.feed[0].end == null;
+    b.disabled = !open;
+  }
   function render(popId) {
     const items = data[tab];
+    updateEnd();
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     if (!items.length) { listEl.innerHTML = `<div class="empty"><svg class="eic" aria-hidden="true"><use href="#${ICON[tab]}"/></svg>${EMPTY[tab]}</div>`; return; }
     listEl.innerHTML = '<div class="head"><span></span><span>Time</span><span>Date</span><span class="h-since">Since last</span><span></span></div>';
@@ -348,7 +376,7 @@
       const row = document.createElement('div');
       row.className = 'row' + (rec.id === popId ? ' pop' : '');
       row.dataset.id = rec.id;
-      row.innerHTML = rowHTML(rec, items[i + 1]);
+      row.innerHTML = rowHTML(rec, items[i + 1], i === 0);
       listEl.appendChild(row);
     });
   }
@@ -365,6 +393,8 @@
       const s = row.querySelector('.since');
       s.classList.toggle('none', !older);
       s.querySelector('b').textContent = older ? span(rec.ts - older.ts) : '–';
+      const sub = subInfo(rec, i === 0), el = row.querySelector('.sub');
+      if (sub && el) el.textContent = sub.text;
     });
   }
 
@@ -380,6 +410,15 @@
     data[tab].unshift(rec); sortTab(tab); render(rec.id); listEl.scrollTop = 0;
     if (navigator.vibrate) navigator.vibrate(15);
     api('POST', '/api/records', { id: rec.id, tab, ts: rec.ts }).catch(saveFailed);
+  });
+
+  $('end').addEventListener('click', () => {
+    const rec = data.feed[0];
+    if (!rec || rec.end != null) return;
+    rec.end = Math.max(rec.ts, Math.floor(Date.now() / 60000) * 60000);
+    render();
+    if (navigator.vibrate) navigator.vibrate(15);
+    api('PATCH', '/api/records/' + rec.id, { end: rec.end }).catch(saveFailed);
   });
 
   // +/- with press-and-hold repeat (delegated so re-renders don't break it)
