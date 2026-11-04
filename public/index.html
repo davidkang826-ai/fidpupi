@@ -149,6 +149,31 @@
 
   .empty { text-align: center; color: var(--muted); font-weight: 700; padding: 26px 10px; font-size: 15px; line-height: 1.5; }
 
+
+  [hidden] { display: none !important; }
+  body:not(.ready) .card { visibility: hidden; }
+  .view { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .for { text-align: center; font-weight: 700; font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .logout { position: absolute; top: 20px; left: 24px; background: none; color: var(--muted); font-weight: 700; font-size: 12px; padding: 6px; z-index: 2; }
+  .auth { justify-content: center; gap: 12px; overflow-y: auto; padding: 6px 2px 10px; }
+  .auth .sub { text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 22px; color: var(--blue-dark); margin: 0 0 4px; }
+  .field { display: block; }
+  .field span { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 0 0 4px 14px; }
+  .field input {
+    width: 100%; height: 50px; border-radius: 999px; border: 2px solid var(--blue-line); background: var(--row);
+    padding: 0 18px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 16px; color: var(--blue-dark); outline: none;
+    -webkit-user-select: text; user-select: text;
+  }
+  .field input:focus { border-color: var(--yellow); background: var(--yellow-soft); }
+  .field input::placeholder { color: #b5c2d8; font-weight: 600; }
+  .err { min-height: 18px; text-align: center; color: #d0505c; font-weight: 700; font-size: 13px; }
+  .auth .stamp { margin-top: 0; flex: none; }
+  .auth .stamp:disabled { opacity: .7; }
+  .link { background: none; color: var(--ink); font-weight: 700; font-size: 14px; padding: 8px; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: #3f5f9f; color: #fff; font-weight: 700; font-size: 14px; padding: 10px 18px; border-radius: 999px; transition: .25s; z-index: 10; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
   /* footer decor */
   .decor { flex: none; height: 46px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 6px 12px; position: relative; z-index: 1; }
   .decor svg { display: block; }
@@ -203,6 +228,20 @@
     <div class="title" aria-label="FidPuPi">
       <span style="color:#7b9bd1">F</span><span style="color:#9ab5de">i</span><span style="color:#7b9bd1">d</span><span style="color:#ecc562">P</span><span style="color:#8fa96f">u</span><span style="color:#7b9bd1">P</span><span style="color:#9ab5de">i</span>
     </div>
+    <div class="for" id="forName" hidden></div>
+
+    <form class="view auth" id="auth" hidden novalidate>
+      <p class="sub" id="authSub">Create your account</p>
+      <label class="field" id="childField"><span>Baby’s name</span><input id="child" type="text" maxlength="40" autocomplete="off" autocapitalize="words" placeholder="e.g. Zion"></label>
+      <label class="field"><span>Email</span><input id="email" type="email" autocomplete="email" autocapitalize="off" placeholder="you@email.com"></label>
+      <label class="field"><span>Password</span><input id="pw" type="password" autocomplete="new-password" placeholder="At least 8 characters"></label>
+      <div class="err" id="err" role="alert"></div>
+      <button class="stamp" id="authBtn" type="submit">Create account</button>
+      <button class="link" id="switch" type="button">Already have an account? Log in</button>
+    </form>
+
+    <div class="view" id="appview" hidden>
+    <button class="logout" id="logout" type="button">Log out</button>
     <div class="clock" id="clock">--:--<small id="ampm"></small><span class="tz" id="tz">EASTERN</span></div>
 
     <div class="tabs" role="tablist">
@@ -214,6 +253,7 @@
     <button class="stamp" id="stamp">Stamp</button>
 
     <div class="list" id="list"></div>
+    </div>
 
     <div class="decor" aria-hidden="true">
       <svg width="56" height="34" viewBox="0 0 80 50">
@@ -243,27 +283,48 @@
   </main>
 </div>
 
+<div class="toast" id="toast" role="status"></div>
+
 <script>
 (function () {
   const TZ = 'America/New_York';
-  const KEY = 'fidpupi.v1';
   const TABS = ['feed', 'pee', 'poop'];
   const EMPTY = {
     feed: 'No feedings yet 🍼<br>Tap “Stamp” when baby eats.',
     pee: 'No pees yet 💧<br>Tap “Stamp” to record one.',
     poop: 'No poops yet 💩<br>Tap “Stamp” to record one.',
   };
+  const $ = id => document.getElementById(id);
 
   // ---------- state ----------
-  let state = { tab: 'feed', data: { feed: [], pee: [], poop: [] } };
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (saved && saved.data) {
-      state.tab = TABS.includes(saved.tab) ? saved.tab : 'feed';
-      TABS.forEach(t => { if (Array.isArray(saved.data[t])) state.data[t] = saved.data[t]; });
+  let tab = 'feed';
+  try { const t = localStorage.getItem('fidpupi.tab'); if (TABS.includes(t)) tab = t; } catch (e) {}
+  let data = { feed: [], pee: [], poop: [] };
+  let loggedIn = false;
+
+  async function api(method, url, body) {
+    const r = await fetch(url, {
+      method, credentials: 'same-origin',
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let j = {}; try { j = await r.json(); } catch (e) {}
+    if (!r.ok) {
+      if (r.status === 401 && loggedIn && !url.includes('/login')) showAuth();
+      const err = new Error(j.error || 'Something went wrong. Please try again.'); err.status = r.status; throw err;
     }
-  } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+    return j;
+  }
+
+  let toastT;
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+  async function reload() {
+    try { data = await api('GET', '/api/records'); render(); } catch (e) {}
+  }
+  function saveFailed() { toast('Couldn’t save — check your connection.'); reload(); }
 
   // ---------- time helpers (all Eastern) ----------
   const timeFmt = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true });
@@ -288,8 +349,7 @@
   }
 
   // ---------- clock ----------
-  const clockEl = document.getElementById('clock');
-  const ampmEl = document.getElementById('ampm');
+  const clockEl = $('clock'), ampmEl = $('ampm');
   let lastMinute = -1;
   function tick() {
     const m = Math.floor(Date.now() / 60000);
@@ -298,14 +358,14 @@
     const p = parts(Date.now());
     clockEl.firstChild.nodeValue = p.hm;
     ampmEl.textContent = p.ap;
-    document.getElementById('tz').textContent = (tzFmt.formatToParts(Date.now()).find(x => x.type === 'timeZoneName') || {}).value === 'EDT' ? 'EASTERN · EDT' : 'EASTERN · EST';
+    const z = (tzFmt.formatToParts(Date.now()).find(x => x.type === 'timeZoneName') || {}).value;
+    $('tz').textContent = 'EASTERN · ' + (z === 'EDT' ? 'EDT' : 'EST');
   }
   setInterval(tick, 1000); tick();
 
   // ---------- render ----------
-  const listEl = document.getElementById('list');
-
-  function sortTab(t) { state.data[t].sort((a, b) => b.ts - a.ts); } // stable
+  const listEl = $('list');
+  const sortTab = t => data[t].sort((a, b) => b.ts - a.ts); // stable
 
   function rowHTML(rec, older) {
     const p = parts(rec.ts);
@@ -319,9 +379,9 @@
   }
 
   function render(popId) {
-    const items = state.data[state.tab];
-    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === state.tab));
-    if (!items.length) { listEl.innerHTML = `<div class="empty">${EMPTY[state.tab]}</div>`; return; }
+    const items = data[tab];
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    if (!items.length) { listEl.innerHTML = `<div class="empty">${EMPTY[tab]}</div>`; return; }
     listEl.innerHTML = '';
     items.forEach((rec, i) => {
       const row = document.createElement('div');
@@ -334,7 +394,7 @@
 
   // update text without replacing nodes (so press-and-hold keeps working)
   function refreshInPlace() {
-    const items = state.data[state.tab];
+    const items = data[tab];
     items.forEach((rec, i) => {
       const row = listEl.querySelector(`.row[data-id="${rec.id}"]`);
       if (!row) return;
@@ -347,29 +407,37 @@
     });
   }
 
-  // ---------- actions ----------
+  // ---------- tracker actions ----------
   document.querySelector('.tabs').addEventListener('click', e => {
     const b = e.target.closest('.tab'); if (!b) return;
-    state.tab = b.dataset.tab; save(); render(); listEl.scrollTop = 0;
+    tab = b.dataset.tab; try { localStorage.setItem('fidpupi.tab', tab); } catch (e) {}
+    render(); listEl.scrollTop = 0;
   });
 
-  document.getElementById('stamp').addEventListener('click', () => {
+  $('stamp').addEventListener('click', () => {
     const rec = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: Math.floor(Date.now() / 60000) * 60000 };
-    state.data[state.tab].unshift(rec);
-    sortTab(state.tab); save(); render(rec.id); listEl.scrollTop = 0;
+    data[tab].unshift(rec); sortTab(tab); render(rec.id); listEl.scrollTop = 0;
     if (navigator.vibrate) navigator.vibrate(15);
+    api('POST', '/api/records', { id: rec.id, tab, ts: rec.ts }).catch(saveFailed);
   });
 
   // +/- with press-and-hold repeat (delegated so re-renders don't break it)
-  let holdT = null, holdI = null, moved = false;
+  let holdT = null, holdI = null; const moved = new Set();
   function nudge(id, dir) {
-    const rec = state.data[state.tab].find(r => r.id === id); if (!rec) return;
-    rec.ts += dir * 60000; moved = true;
+    const rec = data[tab].find(r => r.id === id); if (!rec) return;
+    rec.ts += dir * 60000; moved.add(id);
     refreshInPlace();
   }
   function stopHold() {
     clearTimeout(holdT); clearInterval(holdI); holdT = holdI = null;
-    if (moved) { moved = false; sortTab(state.tab); save(); render(); }
+    if (moved.size) {
+      const ids = [...moved]; moved.clear();
+      sortTab(tab); render();
+      ids.forEach(id => {
+        const rec = data[tab].find(r => r.id === id);
+        if (rec) api('PATCH', '/api/records/' + id, { ts: rec.ts }).catch(saveFailed);
+      });
+    }
   }
   listEl.addEventListener('pointerdown', e => {
     const b = e.target.closest('.adj'); if (!b) return;
@@ -378,26 +446,83 @@
     nudge(id, dir);
     holdT = setTimeout(() => { holdI = setInterval(() => nudge(id, dir), 90); }, 450);
   });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => window.addEventListener(ev, () => { if (holdT || holdI || moved) stopHold(); }));
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => window.addEventListener(ev, () => { if (holdT || holdI || moved.size) stopHold(); }));
+  listEl.addEventListener('contextmenu', e => e.preventDefault());
+
   // delete: first tap arms ("Delete?"), second tap within 3s removes
   let armedBtn = null, armedT = null;
   function disarm() { clearTimeout(armedT); if (armedBtn) { armedBtn.classList.remove('armed'); armedBtn.textContent = '×'; } armedBtn = null; }
   listEl.addEventListener('click', e => {
     const b = e.target.closest('.del'); if (!b) return;
     if (armedBtn === b) {
-      const t = state.tab;
-      state.data[t] = state.data[t].filter(r => r.id !== b.dataset.id);
-      disarm(); save(); render(); return;
+      const id = b.dataset.id;
+      data[tab] = data[tab].filter(r => r.id !== id);
+      disarm(); render();
+      api('DELETE', '/api/records/' + id).catch(saveFailed);
+      return;
     }
     disarm(); armedBtn = b; b.classList.add('armed'); b.textContent = 'Delete?';
     armedT = setTimeout(disarm, 3000);
   });
-  listEl.addEventListener('contextmenu', e => e.preventDefault());
 
-  // refresh "Today/Yesterday" labels when the app comes back to the foreground
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { lastMinute = -1; tick(); render(); } });
+  // ---------- auth ----------
+  let mode = 'signup';
+  function setMode(m) {
+    mode = m;
+    const signup = m === 'signup';
+    $('childField').hidden = !signup;
+    $('authSub').textContent = signup ? 'Create your account' : 'Welcome back';
+    $('authBtn').textContent = signup ? 'Create account' : 'Log in';
+    $('switch').textContent = signup ? 'Already have an account? Log in' : 'New here? Create an account';
+    $('pw').autocomplete = signup ? 'new-password' : 'current-password';
+    $('err').textContent = '';
+  }
+  $('switch').addEventListener('click', () => setMode(mode === 'signup' ? 'login' : 'signup'));
 
-  render();
+  $('auth').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('authBtn'); if (btn.disabled) return;
+    $('err').textContent = '';
+    const body = { email: $('email').value, password: $('pw').value };
+    if (mode === 'signup') body.child = $('child').value;
+    btn.disabled = true; const label = btn.textContent; btn.textContent = '…';
+    try {
+      const me = await api('POST', mode === 'signup' ? '/api/signup' : '/api/login', body);
+      $('pw').value = '';
+      await enter(me);
+    } catch (err) {
+      $('err').textContent = err.message;
+    } finally { btn.disabled = false; btn.textContent = label; }
+  });
+
+  $('logout').addEventListener('click', async () => {
+    try { await api('POST', '/api/logout'); } catch (e) {}
+    data = { feed: [], pee: [], poop: [] };
+    showAuth();
+  });
+
+  function showAuth() {
+    loggedIn = false;
+    $('appview').hidden = true; $('auth').hidden = false; $('forName').hidden = true;
+    setMode(mode);
+  }
+  async function enter(me) {
+    data = await api('GET', '/api/records');
+    loggedIn = true;
+    $('forName').textContent = 'for ' + me.child; $('forName').hidden = false;
+    $('auth').hidden = true; $('appview').hidden = false;
+    lastMinute = -1; tick(); render();
+  }
+
+  // pick up changes made on another phone when returning to the app
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && loggedIn) { lastMinute = -1; tick(); reload(); } });
+
+  // ---------- boot ----------
+  (async () => {
+    try { await enter(await api('GET', '/api/me')); }
+    catch (e) { showAuth(); }
+    document.body.classList.add('ready');
+  })();
 })();
 </script>
 </body>
